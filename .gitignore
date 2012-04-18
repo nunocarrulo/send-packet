@@ -1,0 +1,13 @@
+
+.svn
+*/.svn
+*cscope*
+*.o
+*.a
+*.d
+*.cmd
+*.ko
+*.mod
+*.bak
+tags
+sendpacket

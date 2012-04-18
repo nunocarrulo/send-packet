@@ -1,0 +1,27 @@
+
+       -D dst_ip_address
+              set the dst ip of the packet.
+
+       -d dst_port 
+              set the dst port of the packet.
+
+       -S src_ip_address
+              src ip of the packet.
+
+       -s src_port
+              src port of the packet.
+
+       -A     Adaptive  ping.  Interpacket  interval adapts to round-trip time, so that effectively not more than
+              one (or more, if preload is set) unanswered probes present in  the  network.  Minimal  interval  is
+              200msec  for not super-user.  On networks with low rtt this mode is essentially equivalent to flood
+              mode.
+
+       -c count
+              Stop  after  sending  count  ECHO_REQUEST  packets.  With  deadline  option,  ping  waits for count
+              ECHO_REPLY packets, until the timeout expires.
+
+EXAMPLES
+       · sendpacket -t udp -D x.x.x.x -S x.x.x.x -s xx -d xx
+
+       · sendpacket -t tcp -D x.x.x.x -S x.x.x.x -s xx -d xx
+
