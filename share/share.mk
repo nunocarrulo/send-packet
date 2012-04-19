@@ -5,7 +5,7 @@ d := $(dir)
 LIBRARY := $(OBJ_DIR)/libshare.a
 OBJS_$(d) := $(OBJ_DIR)/packet_about.o
 
-$(OBJS_$(d)) : CFLAGS_LOCAL := -I$(d) -O2 -g -W -Wall
+$(OBJS_$(d)) : CFLAGS_LOCAL := -I$(d) -O2 -W
 
 DEPS_$(d) :=  $(OBJS_$(d):.o=.d)
 LIBS_LIST := $(LIBS_LIST) $(LIBRARY)

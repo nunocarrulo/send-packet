@@ -2,6 +2,7 @@
 
 #ifdef __LINUX_SYS__
 #include <linux/types.h>
+#include <stdint.h>
 #endif
 #include <string.h>
 #include "packet_about.h"

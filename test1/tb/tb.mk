@@ -6,7 +6,7 @@ LIBRARY := $(OBJ_DIR)/tb.a
 OBJS_$(d) := \
 	$(OBJ_DIR)/tb.o \
 
-$(OBJS_$(d)) : CFLAGS_LOCAL := -I$(d) -O2 -g -W -Wall
+$(OBJS_$(d)) : CFLAGS_LOCAL := -I$(d) -O2 -W
 
 DEPS_$(d) :=  $(OBJS_$(d):.o=.d)
 LIBS_LIST := $(LIBS_LIST) $(LIBRARY)
