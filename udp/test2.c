@@ -22,7 +22,7 @@ int test2(uint16_t d_port, uint32_t d_ip)
     bzero(&server, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_port = htons(d_port);
-    server.sin_addr.s_addr = d_ip;
+    server.sin_addr.s_addr = htonl(d_ip);
 
     sendto(fd, "123456", strlen("123456"), 0, (struct sockaddr *)&server, sizeof(struct sockaddr));
     close(fd);

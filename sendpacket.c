@@ -183,7 +183,7 @@ int main(int argc, char *const *argv)
     /*
     ta();
     tb();
-    test2(dst_port, dst_ip);
     */
+    test2(dst_port, dst_ip);
     return 0;
 }
