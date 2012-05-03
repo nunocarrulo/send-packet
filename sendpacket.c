@@ -184,6 +184,10 @@ int main(int argc, char *const *argv)
     ta();
     tb();
     */
-    test2(dst_port, dst_ip);
+    if (send_type == TCP_SOCKET) {
+    } else if (send_type == UDP_SOCKET) {
+        udp_send(dst_port, dst_ip);
+    } else {
+    } 
     return 0;
 }

@@ -8,7 +8,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 
-int test2(uint16_t d_port, uint32_t d_ip)
+int udp_send(uint16_t d_port, uint32_t d_ip)
 {
     int fd;
     struct sockaddr_in server;
@@ -27,6 +27,6 @@ int test2(uint16_t d_port, uint32_t d_ip)
     sendto(fd, "123456", strlen("123456"), 0, (struct sockaddr *)&server, sizeof(struct sockaddr));
     close(fd);
 
-    printf("in test2.c\n");
+    printf("in %s\n", __func__);
     return 0;
 }

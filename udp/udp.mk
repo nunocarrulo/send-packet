@@ -2,10 +2,10 @@ sp := $(sp).x
 dirstack_$(sp) := $(d)
 d := $(dir)
 
-LIBRARY := $(OBJ_DIR)/test2.a
-OBJS_$(d) := $(OBJ_DIR)/test2.o
+LIBRARY := $(OBJ_DIR)/udp.a
+OBJS_$(d) := $(OBJ_DIR)/udp.o
 
-$(OBJS_$(d)) : CFLAGS_LOCAL := -I$(d) -O2 -W
+$(OBJS_$(d)) : CFLAGS_LOCAL := -O2 -W
 
 DEPS_$(d) :=  $(OBJS_$(d):.o=.d)
 LIBS_LIST := $(LIBS_LIST) $(LIBRARY)

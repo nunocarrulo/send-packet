@@ -3,7 +3,7 @@
 
 int ta();
 int tb();
-int test2(uint16_t, uint32_t);
+int udp_send(uint16_t, uint32_t);
 
 
 #endif

@@ -26,7 +26,7 @@ dir := test1
 include $(dir)/tt.mk
 
 dir := udp
-include $(dir)/test2.mk
+include $(dir)/udp.mk
 
 dir := share
 include $(dir)/share.mk
