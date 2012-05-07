@@ -5,10 +5,10 @@ OBJ_DIR := objs
 OBJS := $(OBJ_DIR)/sendpacket.o
 #objs in current directory
 TOP := $(PWD)
-CFLAGS_GLOBAL=-I$(TOP)/include -g -Wall
+CFLAGS_GLOBAL=-g -Wall
 COMPILE  =  $(CC) $(CFLAGS_GLOBAL) $(CFLAGS_LOCAL) -MD -c -o $@ $<
 MAKELIB  = $(AR) -cr $@ $^
-CFLAGS_LOCAL = 
+CFLAGS_LOCAL = -Iudp -Itcp -Itest1
 
 #the directory where the objs put
 
@@ -27,6 +27,9 @@ include $(dir)/tt.mk
 
 dir := udp
 include $(dir)/udp.mk
+
+dir := tcp
+include $(dir)/tcp.mk
 
 dir := share
 include $(dir)/share.mk
