@@ -8,7 +8,7 @@ TOP := $(PWD)
 CFLAGS_GLOBAL=-g -Wall
 COMPILE  =  $(CC) $(CFLAGS_GLOBAL) $(CFLAGS_LOCAL) -MD -c -o $@ $<
 MAKELIB  = $(AR) -cr $@ $^
-CFLAGS_LOCAL = -Iudp -Itcp -Itest1
+CFLAGS_LOCAL = -Iraw -Iudp -Itcp -Itest1 -Iparser_cfg
 
 #the directory where the objs put
 
@@ -22,8 +22,14 @@ $(OBJ_DIR)/%.o : %.c
 
 -include $(OBJS:.o=.d)
 
+dir := parser_cfg
+include $(dir)/parser_cfg.mk
+
 dir := test1
 include $(dir)/tt.mk
+
+dir := raw
+include $(dir)/raw.mk
 
 dir := udp
 include $(dir)/udp.mk

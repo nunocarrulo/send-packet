@@ -1,0 +1,24 @@
+
+#config file will in the following format
+#bitsN N is bits of the value
+#stringN N is strlen(string)
+
+#that is a ip struct
+#45 00 00 4e 01 88 00 00
+#80 11 46 c6 c0 a8 38 01
+#c0 a8 38 ff
+
+bits4    0x4
+bits4    0x5
+bits8    0x00
+bits16   0x004E
+bits16   0x0188
+bits3    0x0
+bits13   0x00
+bits8    0x80
+bits8    0x11
+bits16   0x46c6
+bits32   0xC0A83801
+bits32   0xC0A838FF
+string14 I am xuchunxiao
+

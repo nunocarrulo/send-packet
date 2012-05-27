@@ -9,8 +9,10 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include "sendpacket.h"
+#include "raw.h"
 #include "udp.h"
 #include "tcp.h"
+#include "parser_cfg.h"
 
 static uint32_t timeout = 0;
 static uint32_t src_ip = 0;
@@ -19,12 +21,14 @@ static uint16_t src_port = 0;
 static uint16_t dst_port = 0;
 static uint16_t send_type = 0;
 static uint16_t tcp_send_type = 0;
+static uint16_t ethertype = 0;
 
 static uint32_t sp_show_version;
 static uint32_t sp_show_help;
 static uint32_t sp_show_configure;
 static uint32_t sp_quiet_mode;
-static uint8_t *sp_conf_file;
+static uint8_t *sp_conf_file = NULL;
+static char    *interface = NULL;
 
 static int get_options(int argc, char *const *argv)
 {
@@ -174,16 +178,36 @@ static int get_options(int argc, char *const *argv)
                     sp_conf_file = p;
                     goto next;
                 }
-
                 if (argv[++i]) {
                     sp_conf_file = (uint8_t *) argv[i];
                     goto next;
                 }
-
                 printf("option \"-c\" requires file name.\n");
                 return SP_ERROR;
-
-            default:
+             case 'e':
+                if (*p) {
+                    tmp_arg = (char *)p;
+                } else if (argv[++i]) {
+                    tmp_arg = (char *) argv[i];
+                }
+                if (tmp_arg == NULL) {
+                    printf("option \"-e\" requires ether type.\n");
+                    return SP_ERROR;
+                }
+                ethertype = (uint32_t)atoi(tmp_arg);
+                goto next;
+             case 'i':
+                if (*p) {
+                    interface = (char *)p;
+                    goto next;
+                }
+                if (argv[++i]) {
+                    interface = argv[i];
+                    goto next;
+                }
+                printf("option \"-i\" requires interface name.\n");
+                return SP_ERROR;
+              default:
                 printf("invalid option: \"%c\"", *(p - 1));
                 return SP_ERROR;
             }
@@ -199,7 +223,8 @@ void show_help()
 {
     printf("Usage: sendpacket [-?hvV] [-s src_port] [-d dst_port]\n"
            "                  [-S src_ip] [-D dst_ip] [-t tcp/udp/raw]\n"
-           "                  [-p c/s/all] [-T timeout]\n");
+           "                  [-p c/s/all] [-T timeout] [-e ether_type]\n"
+           "                  [-i interface]\n");
 }
 
 int main(int argc, char *const *argv)
@@ -216,12 +241,24 @@ int main(int argc, char *const *argv)
         }
         return 0;
     }
-
+#if 0
     printf("time out: %u.\n", timeout);
     printf("dst ip:   0x%x.\n", dst_ip);
     printf("src ip:   0x%x.\n", src_ip);
     printf("dst port: 0x%x, %u.\n", dst_port, dst_port);
     printf("src port: 0x%x, %u.\n", src_port, src_port);
+#endif
+    if (sp_conf_file) {
+        char buf[2048];
+        memset(buf, 0, 2048);
+        if (access((char *)sp_conf_file, F_OK)) {
+            printf("file %s not exit.\n", sp_conf_file);
+            return 1;
+        }
+        //printf("config file: %s.\n", sp_conf_file);
+        parser_config((char *)sp_conf_file, buf);
+        return 0;
+    }
     /*
     ta();
     tb();
@@ -236,6 +273,7 @@ int main(int argc, char *const *argv)
     } else if (send_type == UDP_SOCKET) {
         udp_send(dst_port, dst_ip);
     } else {
-    } 
+        raw_send(interface, ethertype, (uint8_t *)"xuchunxiao", 10);
+    }
     return 0;
 }
