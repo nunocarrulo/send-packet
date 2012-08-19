@@ -5,7 +5,7 @@ OBJ_DIR := objs
 OBJS := $(OBJ_DIR)/sendpacket.o
 #objs in current directory
 TOP := $(PWD)
-CFLAGS_GLOBAL=-g -Wall
+CFLAGS_GLOBAL= -g -Wall -Ishare
 COMPILE  =  $(CC) $(CFLAGS_GLOBAL) $(CFLAGS_LOCAL) -MD -c -o $@ $<
 MAKELIB  = $(AR) -cr $@ $^
 CFLAGS_LOCAL = -Iraw -Iudp -Itcp -Itest1 -Iparser_cfg

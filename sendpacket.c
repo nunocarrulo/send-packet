@@ -173,7 +173,26 @@ static int get_options(int argc, char *const *argv)
                     tcp_send_type = TCP_CNCT_SND;
                 }
                 break;
-             case 'c':
+             case 'L':
+                if (*p) {
+                    tmp_arg = (char *)p;
+                } else if (argv[++i]) {
+                    tmp_arg = (char *) argv[i];
+                }
+                if (tmp_arg == NULL) {
+                    printf("option \"-L\" requires all/raw/tcp/udp/config open.\n");
+                    return SP_ERROR;
+                }
+                if (strncmp("raw", tmp_arg, 3) == 0) {
+                } else if (strncmp("tcp", tmp_arg, 3) == 0) {
+                } else if (strncmp("udp", tmp_arg, 3) == 0) {
+                } else if (strncmp("config", tmp_arg, 6) == 0) {
+                    set_parser_debug(1);
+                } else if (strncmp("all", tmp_arg, 3) == 0) {
+                    set_parser_debug(1);
+                }
+                break;
+              case 'c':
                 if (*p) {
                     sp_conf_file = p;
                     goto next;
@@ -224,11 +243,13 @@ void show_help()
     printf("Usage: sendpacket [-?hvV] [-s src_port] [-d dst_port]\n"
            "                  [-S src_ip] [-D dst_ip] [-t tcp/udp/raw]\n"
            "                  [-p c/s/all] [-T timeout] [-e ether_type]\n"
-           "                  [-i interface]\n");
+           "                  [-L all/raw/tcp/udp/config]\n"
+           "                  [-i interface] [-c config_file]\n");
 }
 
 int main(int argc, char *const *argv)
 {
+    int ret = 0;
     if (get_options(argc, argv) != SP_OK) {
         return 1;
     }
@@ -256,7 +277,10 @@ int main(int argc, char *const *argv)
             return 1;
         }
         //printf("config file: %s.\n", sp_conf_file);
-        parser_config((char *)sp_conf_file, buf);
+        ret = parser_config((char *)sp_conf_file, buf, 2048);
+        if (ret) {
+            printf("config file not valid.\n");
+        }
         return 0;
     }
     /*
