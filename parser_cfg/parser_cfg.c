@@ -12,6 +12,7 @@
 
 #define MAXDATASIZE  256
 #define CONFIG_UNVALID 1
+#define MAX_PARSER_BITS 32
 
 static int parser_debug = 0;
 
@@ -53,13 +54,11 @@ static int check_config(char *filename)
     FILE *fp;
     int n_bit = 0;
     int n_char = 0;
-    int word_size = 0;
     int size = 0;
     int ret = 0;
     char buf[MAXDATASIZE] = {0};
 
-    word_size = sizeof(unsigned long) << 3;
-    parser_print("addr line or data line %d bits.\n", word_size);
+    parser_print("addr line or data line %d bits.\n", MAX_PARSER_BITS);
 
     if ((fp = fopen(filename, "r")) == NULL)
         return 2;
@@ -76,16 +75,21 @@ static int check_config(char *filename)
             n_bit = atoi(buf + 4);
             parser_print("bits: %d.\n", n_bit);
             size += n_bit;
-            if (size == word_size) {
+            if (size == MAX_PARSER_BITS) {
                 //parser_print("that is a word, oh hawhaw.\n");
                 size = 0;
-            } else if (size > word_size) {
-                parser_print("content not %d bits aligned, exit.\n", word_size);
+            } else if (size > MAX_PARSER_BITS && (size % MAX_PARSER_BITS == 0)) {
+                size = 0;
+            } else if (size > MAX_PARSER_BITS) {
+                parser_print("content not %d bits aligned, exit.\n", MAX_PARSER_BITS);
                 ret = CONFIG_UNVALID;
                 goto error;
-            } else {
             }
         } else if (strncmp(buf, "string", 6) == 0) {
+            if (size) {
+                ret = CONFIG_UNVALID;
+                goto error;
+            }
             n_char = atoi(buf + 6);
             parser_print("char: %d.\n", n_char);
             /* check if the string is n_char bytes */
@@ -106,7 +110,6 @@ int parser_config(char *filename, char *ptr, int len)
     FILE *fp;
     int n_bit = 0;
     int n_char = 0;
-    int word_size = 0;
     int size = 0;
     int ret = 0;
     char *tmp_ptr = ptr;
@@ -122,7 +125,6 @@ int parser_config(char *filename, char *ptr, int len)
     ret = check_config(filename);
     condition_if_false_ret(ret == 0, ret);
 
-    word_size = sizeof(unsigned long) << 3;
     parser_print("------------------------------------\n");
 
     if ((fp = fopen(filename, "r")) == NULL)
@@ -142,11 +144,11 @@ int parser_config(char *filename, char *ptr, int len)
             size += n_bit;
             ret = get_value(buf, &tmp_data);
             //parser_print("that is a word, oh hawhaw, tmp data: 0x%lx.\n", tmp_data);
-            data |= (tmp_data << (word_size - size));
-            if (size == word_size) {
+            data |= (tmp_data << (MAX_PARSER_BITS - size));
+            if (size == MAX_PARSER_BITS) {
                 //data = ;
                 *(unsigned long *)tmp_ptr = data;
-                tmp_ptr += word_size;
+                tmp_ptr += MAX_PARSER_BITS;
                 parser_print("that is a word, oh hawhaw, data: 0x%lx.\n", data);
                 size = 0;
                 data = 0;

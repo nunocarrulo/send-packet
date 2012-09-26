@@ -185,11 +185,13 @@ static int get_options(int argc, char *const *argv)
                 }
                 if (strncmp("raw", tmp_arg, 3) == 0) {
                 } else if (strncmp("tcp", tmp_arg, 3) == 0) {
+                    set_tcp_debug(1);
                 } else if (strncmp("udp", tmp_arg, 3) == 0) {
                 } else if (strncmp("config", tmp_arg, 6) == 0) {
                     set_parser_debug(1);
                 } else if (strncmp("all", tmp_arg, 3) == 0) {
                     set_parser_debug(1);
+                    set_tcp_debug(1);
                 }
                 break;
               case 'c':
@@ -213,7 +215,7 @@ static int get_options(int argc, char *const *argv)
                     printf("option \"-e\" requires ether type.\n");
                     return SP_ERROR;
                 }
-                ethertype = (uint32_t)atoi(tmp_arg);
+                ethertype = (uint32_t)strtoul(tmp_arg, NULL, 0);
                 goto next;
              case 'i':
                 if (*p) {

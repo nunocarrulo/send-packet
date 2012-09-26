@@ -38,27 +38,58 @@ static int get_ifindex(const char *device)
     return ifr.ifr_ifindex;
 }
 
+int get_macaddr(const char *device, char *mac)
+{
+    int32_t sock;
+    struct ifreq ifr;
+
+    memset(mac, 0, 6);
+    sock = socket(AF_INET,SOCK_DGRAM, 0);
+    if (sock < 0 ) {
+        perror("socket\n");
+        return -1;
+    }
+    memset((char *)&ifr, 0, sizeof(ifr));
+    strcpy(ifr.ifr_name, device);
+    fflush(stdout);
+    if (ioctl(sock, SIOCGIFHWADDR, (char *)&ifr) < 0) {
+        printf("mac addr get failed.\n");
+        close(sock);
+        return -1;
+    }
+    fflush(stdout);
+    memcpy(mac, ifr.ifr_hwaddr.sa_data, 6);
+    close(sock);
+    return 0;
+}
+
 int raw_send(char *net_i, uint16_t ether_type, uint8_t *ptr, int len)
 {
     int fd;
     int ifindex = 0;
     uint8_t *buf = NULL;
+    char *device = NULL;
     struct sockaddr_ll sll;
     uint16_t n_ethtype;
-    char dmac[] = {0x08, 0x00, 0x27, 0x00, 0x60, 0x5A};
+    char dmac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    char smac[6];
 
     printf("line: %d.\n", __LINE__);
     if (net_i) {
-        if ((ifindex = get_ifindex(net_i)) <= 0) {
-            return (-1);
+        device = net_i;
+        if (get_macaddr(device, smac)) {
+            memset(smac, 0x88, 6);
         }
     } else {
-        if ((ifindex = get_ifindex("lo")) <= 0) {
-            return (-1);
-        }
+        device = "lo";
+        memset(smac, 0x88, 6);
+    }
+    if ((ifindex = get_ifindex(device)) <= 0) {
+        return -1;
     }
     n_ethtype = htons(ether_type);
     if ((fd = socket(AF_PACKET, SOCK_RAW, n_ethtype)) < 0) {
+        printf("create socket failed.\n");
         return fd;
     }
     printf("line: %d.\n", __LINE__);
@@ -66,13 +97,14 @@ int raw_send(char *net_i, uint16_t ether_type, uint8_t *ptr, int len)
     bzero(&sll, sizeof(sll));
     sll.sll_family = AF_PACKET;
     sll.sll_halen = 6;
-    memcpy(sll.sll_addr, dmac, 6);
+    //memcpy(sll.sll_addr, dmac, 6);
     sll.sll_ifindex = ifindex;
     sll.sll_protocol = n_ethtype;
 
     bind(fd, (struct sockaddr *)&sll, sizeof(sll));
     buf = malloc(len + 14);
     memcpy(buf, dmac, 6);
+    memcpy(buf + 6, smac, 6);
     memcpy(buf + 12, &n_ethtype, 2);
     memcpy(buf + 14, ptr, len);
     printf("line: %d.\n", __LINE__);
