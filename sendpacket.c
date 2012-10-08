@@ -291,11 +291,16 @@ int main(int argc, char *const *argv)
         ret = parser_config((char *)sp_conf_file, buf, 2048, &conf_len);
         if (ret) {
             printf("config file not valid.\n");
+            return 1;
         }
         //print_content((uint8_t *)buf, 64);
-        //hex_and_ascii_print("\n    ", (const uint8_t *)buf, 64);
+        //hex_and_ascii_print("\n    ", (const uint8_t *)buf, conf_len);
         //printf("\n");
-        raw_send(interface, ethertype, (uint8_t *)buf, conf_len);
+        if (ethertype) {
+            raw_send(interface, ethertype, (uint8_t *)buf, conf_len);
+        } else {
+            raw_send_all(interface, (uint8_t *)buf, conf_len);
+        }
         return 0;
     }
     /*

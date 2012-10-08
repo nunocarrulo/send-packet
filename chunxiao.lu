@@ -2,15 +2,21 @@
 #config file will in the following format
 #bitsN N is bits of the value
 #stringN N is strlen(string)
+#if one seg is not aligned,
+#bits num must can be divide exactly by 8.
 
 #that is a ip struct
 #45 00 00 4e 01 88 fa bc
 #80 11 46 c6 c0 a8 38 01
 #c0 a8 38 ff
+seg_start
+notalign
 bits48   0x112233445566
 bits48   0x665544332211
 bits16   0x0800
+seg_end
 
+seg_start
 bits4    0x4
 bits4    0x5
 bits8    0x00
@@ -24,4 +30,4 @@ bits16   0x46c6
 bits32   0xC0A83801
 bits32   0xC0A838FF
 string15 "I am xuchunxiao"
-
+seg_end

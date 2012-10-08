@@ -19,6 +19,7 @@
 #include "log.h"
 
 #define MAXDATASIZE  2048
+#define PARSER_FILE_DEPTH 4096 
 #define CONFIG_UNVALID 1
 #define MAX_PARSER_BITS 32
 #define MAX_CALC_BITS   64
@@ -65,6 +66,8 @@ static int check_config(char *filename)
     int n_char = 0;
     int size = 0;
     int ret = 0;
+    int aligned = 1;
+    int started = 0;
     char buf[MAXDATASIZE] = {0};
 
     parser_print("addr line or data line %d bits.\n", MAX_PARSER_BITS);
@@ -77,6 +80,26 @@ static int check_config(char *filename)
             continue;
         }
         if (buf[0] == '#') {
+            continue;
+        }
+        if (strncmp(buf, "seg_start", 9) == 0) {
+            started = 1;
+        } else if (strncmp(buf, "seg_end", 7) == 0) {
+            started = 0;
+            aligned = 1;
+        } else if (strncmp(buf, "notalign", 7) == 0) {
+            aligned = 0;
+        }
+        if (aligned != 1 || started == 0) {
+            if (strncmp(buf, "bits", 4) == 0) {
+                n_bit = atoi(buf + 4);
+                parser_print("bits: %d.\n", n_bit);
+                if (n_bit % 8) {
+                    printf("Not aligned content must be divided exactly by 8.\n");
+                    ret = CONFIG_UNVALID;
+                    goto error;
+                }
+            }
             continue;
         }
         //parser_print("%s", buf);
@@ -94,7 +117,7 @@ static int check_config(char *filename)
             } else if (size > MAX_PARSER_BITS && (size % MAX_PARSER_BITS == 0)) {
                 size = 0;
             } else if (size > MAX_PARSER_BITS) {
-                parser_print("content not %d bits aligned, exit.\n", MAX_PARSER_BITS);
+                printf("content not %d bits aligned, exit.\n", MAX_PARSER_BITS);
                 ret = CONFIG_UNVALID;
                 goto error;
             }
@@ -130,6 +153,8 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
     uint64_t data_64 = 0;
     uint64_t tmp_data = 0;
     char buf[MAXDATASIZE] = {0};
+    int aligned = 1;
+    int started = 0;
 
     data_64 = data_64;
     data_32 = data_32;
@@ -152,7 +177,35 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
         if (buf[0] == '#') {
             continue;
         }
+        if (strncmp(buf, "seg_start", 9) == 0) {
+            started = 1;
+        } else if (strncmp(buf, "seg_end", 7) == 0) {
+            started = 0;
+            aligned = 1;
+        } else if (strncmp(buf, "notalign", 7) == 0) {
+            aligned = 0;
+        }
+        if (aligned != 1 || started == 0) {
+            /* get value from not aligned seg */
+            if (strncmp(buf, "bits", 4) == 0) {
+                n_bit = atoi(buf + 4);
+                ret = get_value(buf, &tmp_data);
+                tmp_data = (tmp_data << (MAX_CALC_BITS - n_bit));
+                parser_print("hawhaw, tmp_data: 0x%lx.\n", tmp_data);
+                tmp_data = htobe64(tmp_data);
+                parser_print("hawhaw, tmp_data: 0x%lx.\n", tmp_data);
+                memcpy(tmp_ptr, (char *)&tmp_data, n_bit >> 3);
+                tmp_ptr += (n_bit >> 3);
+            } else if (strncmp(buf, "string", 6) == 0) {
+                n_char = atoi(buf + 6);
+                strncpy(tmp_ptr, strchr(buf, '\"') + 1, n_char);
+                tmp_ptr += n_char;
+            }
+            continue;
+        }
+
         //parser_print("%s", buf);
+        /* get value from aligned seg */
         if (strncmp(buf, "bits", 4) == 0) {
             n_bit = atoi(buf + 4);
             //parser_print("bits: %d.\n", n_bit);
@@ -175,6 +228,9 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
                 /* size must be 32 */
                 *(uint32_t *)tmp_ptr = htobe32((uint32_t)(data_64 >> 32));
                 tmp_ptr += 4;
+                size = 0;
+                data_32 = 0;
+                data_64 = 0;
             }
             n_char = atoi(buf + 6);
             parser_print("char: %d.\n", n_char);
