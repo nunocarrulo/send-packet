@@ -7,6 +7,9 @@
 #45 00 00 4e 01 88 fa bc
 #80 11 46 c6 c0 a8 38 01
 #c0 a8 38 ff
+bits48   0x112233445566
+bits48   0x665544332211
+bits16   0x0800
 
 bits4    0x4
 bits4    0x5
@@ -20,5 +23,5 @@ bits8    0x11
 bits16   0x46c6
 bits32   0xC0A83801
 bits32   0xC0A838FF
-string14 "I am xuchunxiao"
+string15 "I am xuchunxiao"
 

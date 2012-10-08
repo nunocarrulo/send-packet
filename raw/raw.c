@@ -16,8 +16,24 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <net/ethernet.h>
 #include <fcntl.h>
 #include <linux/if_packet.h>
+#include "log.h"
+
+static int raw_debug = 0;
+
+#define raw_print(fmt, args...)    \
+    do {                           \
+        if (raw_debug)             \
+            printf(fmt, ##args);   \
+    } while(0)
+
+int set_raw_debug(int log)
+{
+    raw_debug = log;
+    return 0;
+}
 
 static int get_ifindex(const char *device)
 {
@@ -74,7 +90,7 @@ int raw_send(char *net_i, uint16_t ether_type, uint8_t *ptr, int len)
     char dmac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     char smac[6];
 
-    printf("line: %d.\n", __LINE__);
+    raw_print("line: %d.\n", __LINE__);
     if (net_i) {
         device = net_i;
         if (get_macaddr(device, smac)) {
@@ -92,7 +108,7 @@ int raw_send(char *net_i, uint16_t ether_type, uint8_t *ptr, int len)
         printf("create socket failed.\n");
         return fd;
     }
-    printf("line: %d.\n", __LINE__);
+    raw_print("line: %d.\n", __LINE__);
 
     bzero(&sll, sizeof(sll));
     sll.sll_family = AF_PACKET;
@@ -107,12 +123,52 @@ int raw_send(char *net_i, uint16_t ether_type, uint8_t *ptr, int len)
     memcpy(buf + 6, smac, 6);
     memcpy(buf + 12, &n_ethtype, 2);
     memcpy(buf + 14, ptr, len);
-    printf("line: %d.\n", __LINE__);
+    raw_print("line: %d.\n", __LINE__);
     if (sendto(fd, buf, len + 14, 0, (struct sockaddr *)&sll, sizeof(sll)) < 0) {
         perror("sendto error.\n");
         return -1;
     }
-    printf("line: %d.\n", __LINE__);
+    raw_print("line: %d.\n", __LINE__);
     free(buf);
+    return fd;
+}
+
+int raw_send_all(char *net_i, uint8_t *ptr, int len)
+{
+    int fd;
+    int ifindex = 0;
+    char *device = NULL;
+    struct sockaddr_ll sll;
+
+    raw_print("line: %d.\n", __LINE__);
+    condition_if_false_ret(ptr != NULL, -1);
+    if (net_i) {
+        device = net_i;
+    } else {
+        device = "lo";
+    }
+    if ((ifindex = get_ifindex(device)) <= 0) {
+        return -1;
+    }
+    if ((fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) {
+        printf("create socket failed.\n");
+        return fd;
+    }
+    raw_print("line: %d.\n", __LINE__);
+
+    bzero(&sll, sizeof(sll));
+    sll.sll_family = AF_PACKET;
+    sll.sll_halen = 6;
+    //memcpy(sll.sll_addr, dmac, 6);
+    sll.sll_ifindex = ifindex;
+    sll.sll_protocol = htons(ETH_P_ALL);
+
+    bind(fd, (struct sockaddr *)&sll, sizeof(sll));
+    raw_print("line: %d.\n", __LINE__);
+    if (sendto(fd, ptr, len, 0, (struct sockaddr *)&sll, sizeof(sll)) < 0) {
+        perror("sendto error.\n");
+        return -1;
+    }
+    raw_print("line: %d.\n", __LINE__);
     return fd;
 }

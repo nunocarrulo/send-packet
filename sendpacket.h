@@ -1,7 +1,7 @@
 #ifndef __SENDPACKET__
 #define __SENDPACKET__
 
-#define SP_VERSION      "0.8.8"
+#define SP_VERSION      "0.9.8"
 #define SP_VER          "sendpacket/" SP_VERSION
 
 #define RAW_SOCKET     1

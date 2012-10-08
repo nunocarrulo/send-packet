@@ -1,3 +1,9 @@
+/**
+ * @file sendpacket.c
+ * @Synopsis main file 
+ * @author xuchunxiao369@gmail.com
+ * @date 2012-10-08
+ */
 #include <stdio.h>
 #include <strings.h>
 #include <string.h>
@@ -13,6 +19,7 @@
 #include "udp.h"
 #include "tcp.h"
 #include "parser_cfg.h"
+#include "common_print.h"
 
 static uint32_t timeout = 0;
 static uint32_t src_ip = 0;
@@ -184,6 +191,7 @@ static int get_options(int argc, char *const *argv)
                     return SP_ERROR;
                 }
                 if (strncmp("raw", tmp_arg, 3) == 0) {
+                    set_raw_debug(1);
                 } else if (strncmp("tcp", tmp_arg, 3) == 0) {
                     set_tcp_debug(1);
                 } else if (strncmp("udp", tmp_arg, 3) == 0) {
@@ -229,7 +237,7 @@ static int get_options(int argc, char *const *argv)
                 printf("option \"-i\" requires interface name.\n");
                 return SP_ERROR;
               default:
-                printf("invalid option: \"%c\"", *(p - 1));
+                printf("invalid option: \"%c\"\n", *(p - 1));
                 return SP_ERROR;
             }
         }
@@ -252,6 +260,8 @@ void show_help()
 int main(int argc, char *const *argv)
 {
     int ret = 0;
+    char buf[2048];
+    int conf_len = 0;
     if (get_options(argc, argv) != SP_OK) {
         return 1;
     }
@@ -264,6 +274,7 @@ int main(int argc, char *const *argv)
         }
         return 0;
     }
+    memset(buf, 0, 2048);
 #if 0
     printf("time out: %u.\n", timeout);
     printf("dst ip:   0x%x.\n", dst_ip);
@@ -272,17 +283,19 @@ int main(int argc, char *const *argv)
     printf("src port: 0x%x, %u.\n", src_port, src_port);
 #endif
     if (sp_conf_file) {
-        char buf[2048];
-        memset(buf, 0, 2048);
         if (access((char *)sp_conf_file, F_OK)) {
             printf("file %s not exit.\n", sp_conf_file);
             return 1;
         }
         //printf("config file: %s.\n", sp_conf_file);
-        ret = parser_config((char *)sp_conf_file, buf, 2048);
+        ret = parser_config((char *)sp_conf_file, buf, 2048, &conf_len);
         if (ret) {
             printf("config file not valid.\n");
         }
+        //print_content((uint8_t *)buf, 64);
+        //hex_and_ascii_print("\n    ", (const uint8_t *)buf, 64);
+        //printf("\n");
+        raw_send(interface, ethertype, (uint8_t *)buf, conf_len);
         return 0;
     }
     /*
