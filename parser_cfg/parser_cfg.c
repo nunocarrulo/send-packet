@@ -25,6 +25,12 @@
 #define MAX_CALC_BITS   64
 
 static int parser_debug = 0;
+parser_config_t cfg_rslt[PARSER_FILE_DEPTH];
+
+void init_cfg_rslt(void)
+{
+    memset(cfg_rslt, 0, sizeof(parser_config_t) * PARSER_FILE_DEPTH);
+}
 
 #define parser_print(fmt, args...) \
     do {                           \
@@ -244,4 +250,5 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
     *get_len = tmp_ptr - ptr;
     return ret;
 }
+
 
