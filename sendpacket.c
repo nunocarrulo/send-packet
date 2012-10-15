@@ -283,6 +283,7 @@ int main(int argc, char *const *argv)
     printf("src port: 0x%x, %u.\n", src_port, src_port);
 #endif
     if (sp_conf_file) {
+        init_cfg_rslt();
         if (access((char *)sp_conf_file, F_OK)) {
             printf("file %s not exit.\n", sp_conf_file);
             return 1;
@@ -293,6 +294,7 @@ int main(int argc, char *const *argv)
             printf("config file not valid.\n");
             return 1;
         }
+        show_cfg_rslt();
         //print_content((uint8_t *)buf, 64);
         //hex_and_ascii_print("\n    ", (const uint8_t *)buf, conf_len);
         //printf("\n");
@@ -301,6 +303,7 @@ int main(int argc, char *const *argv)
         } else {
             raw_send_all(interface, (uint8_t *)buf, conf_len);
         }
+        clean_cfg_rslt();
         return 0;
     }
     /*

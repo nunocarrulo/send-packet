@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <endian.h>
 #include "log.h"
+#include "common.h"
+#include "parser_cfg.h"
 
 #define MAXDATASIZE  2048
 #define PARSER_FILE_DEPTH 4096 
@@ -30,6 +32,73 @@ parser_config_t cfg_rslt[PARSER_FILE_DEPTH];
 void init_cfg_rslt(void)
 {
     memset(cfg_rslt, 0, sizeof(parser_config_t) * PARSER_FILE_DEPTH);
+}
+
+void show_cfg_rslt(void)
+{
+    int line = 0;
+    while (line < PARSER_FILE_DEPTH) {
+        if (cfg_rslt[line].type == 0) {
+            break;
+        }
+        printf("offset: %04d, type: %d, vary, %d, num: %02d, ",\
+               cfg_rslt[line].offset,\
+               cfg_rslt[line].type,\
+               cfg_rslt[line].vary,\
+               cfg_rslt[line].num);
+        if (cfg_rslt[line].type == SP_CNFG_TYPE_BITS) {
+            printf("value: 0x%16lx", cfg_rslt[line].u.value);
+        } else if (cfg_rslt[line].type == SP_CNFG_TYPE_STRING) {
+            printf("string: %s", cfg_rslt[line].u.str);
+        }
+        printf("\n");
+        line++;
+    }
+    printf("\n");
+}
+
+void get_newbuf_by_cfg_rslt(char *buf, int counter)
+{
+    /* */
+    int line = 0;
+    buf = buf;
+    if (counter == 0) {
+        return;
+    }
+    while (line < PARSER_FILE_DEPTH) {
+        if (cfg_rslt[line].type == 0) {
+            break;
+        }
+        printf("offset: %04d, type: %d, vary, %d, num: %02d, ",\
+               cfg_rslt[line].offset,\
+               cfg_rslt[line].type,\
+               cfg_rslt[line].vary,\
+               cfg_rslt[line].num);
+        if (cfg_rslt[line].vary != 0) {
+            if (cfg_rslt[line].type == SP_CNFG_TYPE_BITS) {
+                printf("value: 0x%16lx", cfg_rslt[line].u.value);
+            } else if (cfg_rslt[line].type == SP_CNFG_TYPE_STRING) {
+                printf("string: %s", cfg_rslt[line].u.str);
+            }
+        }
+        line++;
+    }
+}
+
+void clean_cfg_rslt(void)
+{
+    int line = 0;
+    while (line < PARSER_FILE_DEPTH) {
+        if (cfg_rslt[line].type == 0) {
+            break;
+        }
+        if (cfg_rslt[line].type == SP_CNFG_TYPE_STRING) {
+            if (cfg_rslt[line].u.str != NULL) {
+                free(cfg_rslt[line].u.str);
+            }
+        }
+        line++;
+    }
 }
 
 #define parser_print(fmt, args...) \
@@ -161,6 +230,8 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
     char buf[MAXDATASIZE] = {0};
     int aligned = 1;
     int started = 0;
+    int valid_line = 0;
+    int bits_count = 0;
 
     data_64 = data_64;
     data_32 = data_32;
@@ -196,6 +267,15 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
             if (strncmp(buf, "bits", 4) == 0) {
                 n_bit = atoi(buf + 4);
                 ret = get_value(buf, &tmp_data);
+
+                cfg_rslt[valid_line].offset = bits_count;
+                cfg_rslt[valid_line].type = SP_CNFG_TYPE_BITS;
+                cfg_rslt[valid_line].vary = 0;
+                cfg_rslt[valid_line].num = n_bit;
+                cfg_rslt[valid_line].u.value = tmp_data;
+                bits_count += n_bit;
+                valid_line++;
+
                 tmp_data = (tmp_data << (MAX_CALC_BITS - n_bit));
                 parser_print("hawhaw, tmp_data: 0x%lx.\n", tmp_data);
                 tmp_data = htobe64(tmp_data);
@@ -206,6 +286,15 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
                 n_char = atoi(buf + 6);
                 strncpy(tmp_ptr, strchr(buf, '\"') + 1, n_char);
                 tmp_ptr += n_char;
+
+                cfg_rslt[valid_line].offset = bits_count;
+                cfg_rslt[valid_line].type = SP_CNFG_TYPE_STRING;
+                cfg_rslt[valid_line].vary = 0;
+                cfg_rslt[valid_line].num = n_bit;
+                cfg_rslt[valid_line].u.str = sp_zmalloc(n_char + 1);
+                strncpy(cfg_rslt[valid_line].u.str, strchr(buf, '\"') + 1, n_char);
+                bits_count += (n_char * 8);
+                valid_line++;
             }
             continue;
         }
@@ -218,6 +307,15 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
             size += n_bit;
             ret = get_value(buf, &tmp_data);
             //parser_print("that is a word, oh hawhaw, tmp data: 0x%lx.\n", tmp_data);
+
+            cfg_rslt[valid_line].offset = bits_count;
+            cfg_rslt[valid_line].type = SP_CNFG_TYPE_BITS;
+            cfg_rslt[valid_line].vary = 0;
+            cfg_rslt[valid_line].num = n_bit;
+            cfg_rslt[valid_line].u.value = tmp_data;
+            bits_count += n_bit;
+            valid_line++;
+
             data_64 |= (tmp_data << (MAX_CALC_BITS - size));
             if (size == MAX_CALC_BITS) {
                 //data = ;
@@ -243,6 +341,15 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
             parser_print("string: %s.\n", strchr(buf, '\"') + 1);
             strncpy(tmp_ptr, strchr(buf, '\"') + 1, n_char);
             tmp_ptr += n_char;
+
+            cfg_rslt[valid_line].offset = bits_count;
+            cfg_rslt[valid_line].type = SP_CNFG_TYPE_STRING;
+            cfg_rslt[valid_line].vary = 0;
+            cfg_rslt[valid_line].num = n_char;
+            cfg_rslt[valid_line].u.str = sp_zmalloc(n_char + 1);
+            strncpy(cfg_rslt[valid_line].u.str, strchr(buf, '\"') + 1, n_char);
+            bits_count += (n_char * 8);
+            valid_line++;
         }
         memset(buf, 0, MAXDATASIZE);
     }

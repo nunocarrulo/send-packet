@@ -21,6 +21,16 @@ typedef struct _parser_config {
         char *str;
     } u;
 } parser_config_t;
+
+#define SP_CNFG_TYPE_BITS   1
+#define SP_CNFG_TYPE_STRING 2
+
+#define SP_CNFG_VARY_INC    1
+#define SP_CNFG_VARY_DEC    2
+
+void init_cfg_rslt(void);
+void show_cfg_rslt(void);
+void clean_cfg_rslt(void);
 int parser_config(char *filename, char *ptr, int len, int *get_len);
 int set_parser_debug(int log);
 #endif
