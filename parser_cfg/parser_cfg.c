@@ -9,6 +9,7 @@
 #include <strings.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -47,7 +48,7 @@ void show_cfg_rslt(void)
                cfg_rslt[line].vary,\
                cfg_rslt[line].num);
         if (cfg_rslt[line].type == SP_CNFG_TYPE_BITS) {
-            printf("value: 0x%16lx", cfg_rslt[line].u.value);
+            printf("value: 0x%" PRIxFAST64, cfg_rslt[line].u.value);
         } else if (cfg_rslt[line].type == SP_CNFG_TYPE_STRING) {
             printf("string: %s", cfg_rslt[line].u.str);
         }
@@ -76,7 +77,7 @@ void get_newbuf_by_cfg_rslt(char *buf, int counter)
                cfg_rslt[line].num);
         if (cfg_rslt[line].vary != 0) {
             if (cfg_rslt[line].type == SP_CNFG_TYPE_BITS) {
-                printf("value: 0x%16lx", cfg_rslt[line].u.value);
+                printf("value: 0x%" PRIxFAST64, cfg_rslt[line].u.value);
             } else if (cfg_rslt[line].type == SP_CNFG_TYPE_STRING) {
                 printf("string: %s", cfg_rslt[line].u.str);
             }
@@ -277,9 +278,9 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
                 valid_line++;
 
                 tmp_data = (tmp_data << (MAX_CALC_BITS - n_bit));
-                parser_print("hawhaw, tmp_data: 0x%lx.\n", tmp_data);
-                tmp_data = htobe64(tmp_data);
-                parser_print("hawhaw, tmp_data: 0x%lx.\n", tmp_data);
+                parser_print("hawhaw, tmp_data: 0x%" PRIxFAST64 ".\n", tmp_data);
+                tmp_data = htonll(tmp_data);
+                parser_print("hawhaw, tmp_data: 0x%" PRIxFAST64 ".\n", tmp_data);
                 memcpy(tmp_ptr, (char *)&tmp_data, n_bit >> 3);
                 tmp_ptr += (n_bit >> 3);
             } else if (strncmp(buf, "string", 6) == 0) {
@@ -319,18 +320,18 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
             data_64 |= (tmp_data << (MAX_CALC_BITS - size));
             if (size == MAX_CALC_BITS) {
                 //data = ;
-                *(uint64_t *)tmp_ptr = htobe64(data_64);
+                *(uint64_t *)tmp_ptr = htonll(data_64);
                 tmp_ptr += 8;
-                parser_print("that is a word, oh hawhaw, data64: 0x%lx.\n", data_64);
+                parser_print("that is a word, oh hawhaw, data64: 0x%" PRIxFAST64 ".\n", data_64);
                 size = 0;
                 data_32 = 0;
                 data_64 = 0;
             }
         } else if (strncmp(buf, "string", 6) == 0) {
-            parser_print("that is a data64 or data 32: 0x%lx.\n", data_64);
+            parser_print("that is a data64 or data 32: 0x%" PRIxFAST64 ".\n", data_64);
             if (size != 0) {
                 /* size must be 32 */
-                *(uint32_t *)tmp_ptr = htobe32((uint32_t)(data_64 >> 32));
+                *(uint32_t *)tmp_ptr = htonl((uint32_t)(data_64 >> 32));
                 tmp_ptr += 4;
                 size = 0;
                 data_32 = 0;
