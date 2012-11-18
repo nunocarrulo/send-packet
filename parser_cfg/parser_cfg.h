@@ -33,4 +33,5 @@ void show_cfg_rslt(void);
 void clean_cfg_rslt(void);
 int parser_config(char *filename, char *ptr, int len, int *get_len);
 int set_parser_debug(int log);
+void reconfig_cfg_rslt(void *ptr);
 #endif

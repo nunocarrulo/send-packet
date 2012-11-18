@@ -28,6 +28,18 @@
 #define MAX_CALC_BITS   64
 
 static int parser_debug = 0;
+#define parser_print(fmt, args...) \
+    do {                           \
+        if (parser_debug)          \
+            printf(fmt, ##args);   \
+    } while(0)
+
+int set_parser_debug(int log)
+{
+    parser_debug = log;
+    return 0;
+}
+
 parser_config_t cfg_rslt[PARSER_FILE_DEPTH];
 
 void init_cfg_rslt(void)
@@ -53,6 +65,80 @@ void show_cfg_rslt(void)
             printf("string: %s", cfg_rslt[line].u.str);
         }
         printf("\n");
+        line++;
+    }
+    printf("\n");
+}
+
+static int get_bitsoffset_value(void *ptr, int bits_offset)
+{
+    int a;
+    int b;
+    uint8_t  tmp = 0;
+    a = bits_offset / 8;
+    b = bits_offset % 8;
+    tmp = *((uint8_t *)ptr + a);
+    if (tmp >> (7 - b)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static void set_bitsoffset_value(void *ptr, int bits_offset, int v)
+{
+    int a;
+    int b;
+    uint8_t  tmp = 0;
+    a = bits_offset / 8;
+    b = bits_offset % 8;
+    tmp = *((uint8_t *)ptr + a);
+    if (v) {
+        tmp |= (1 << (7 - b));
+    } else {
+        tmp &= (~(1 << (7 - b)));
+    }
+    *((uint8_t *)ptr + a) = tmp;
+}
+
+static void inc_value_by_offset(void *ptr, int bits_offset, int bits_num)
+{
+    uint64_t value = 0ull;
+    int bits_v;
+    int i = 0;
+
+    for (i = 0; i < bits_num; i++) {
+        bits_v = get_bitsoffset_value(ptr, bits_offset + i);
+        if (bits_v) {
+            value |= (1ull << (bits_num - i));
+        }
+    }
+    parser_print("value: %" PRIdLEAST64, value);
+    value++;
+    for (i = 0; i < bits_num; i++) {
+        set_bitsoffset_value(ptr, bits_offset + i, value >> (bits_num - i));
+    }
+}
+
+void reconfig_cfg_rslt(void *ptr)
+{
+    int line = 0;
+    while (line < PARSER_FILE_DEPTH) {
+        if (cfg_rslt[line].type == 0) {
+            break;
+        }
+        printf("offset: %04d, type: %d, vary, %d, num: %02d, ",\
+               cfg_rslt[line].offset,\
+               cfg_rslt[line].type,\
+               cfg_rslt[line].vary,\
+               cfg_rslt[line].num);
+        if (cfg_rslt[line].vary == SP_CNFG_VARY_INC) {
+            if (cfg_rslt[line].type == SP_CNFG_TYPE_BITS) {
+                printf("value: 0x%" PRIxFAST64, cfg_rslt[line].u.value);
+            }
+            inc_value_by_offset(ptr, cfg_rslt[line].offset, cfg_rslt[line].num);
+        } else if (cfg_rslt[line].vary == SP_CNFG_VARY_DEC) {
+        }
         line++;
     }
     printf("\n");
@@ -102,18 +188,6 @@ void clean_cfg_rslt(void)
     }
 }
 
-#define parser_print(fmt, args...) \
-    do {                           \
-        if (parser_debug)          \
-            printf(fmt, ##args);   \
-    } while(0)
-
-int set_parser_debug(int log)
-{
-    parser_debug = log;
-    return 0;
-}
-
 /* get value from the second word of the buf, 
  * this function is not safe in multi-thread programm
  */
@@ -126,7 +200,7 @@ static int get_value(char *buf, uint64_t *value)
         count++;
         if (count == 2) {
             //parser_print("p: %s.\n", p);
-            *value = (uint64_t)strtoul(p, NULL, 0);
+            *value = (uint64_t)strtoull(p, NULL, 0);
             return 0;
         }
         p = strtok(NULL, " ");

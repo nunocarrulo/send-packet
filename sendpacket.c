@@ -29,6 +29,7 @@ static uint16_t dst_port = 0;
 static uint16_t send_type = 0;
 static uint16_t tcp_send_type = 0;
 static uint16_t ethertype = 0;
+static uint32_t send_times = 1;
 
 static uint32_t sp_show_version;
 static uint32_t sp_show_help;
@@ -37,6 +38,7 @@ static uint32_t sp_quiet_mode;
 static uint8_t *sp_conf_file = NULL;
 static char    *interface = NULL;
 
+extern void show_help();
 static int get_options(int argc, char *const *argv)
 {
     uint8_t *p;
@@ -51,6 +53,18 @@ static int get_options(int argc, char *const *argv)
         if (*p++ != '-') {
             sprintf(0, "invalid option: \"%s\"", argv[i]);
             return 1;
+        }
+        if (*p == '-') {
+            p++;
+            if (strncmp("test", (char *)p, 4) == 0) {
+                printf("come to test ...\n");
+                return 0;
+            }
+            if (strncmp("help", (char *)p, 4) == 0) {
+                sp_show_version = 1;
+                sp_show_help = 1;
+                return 0;
+            }
         }
 
         while (*p) {
@@ -254,7 +268,9 @@ void show_help()
            "                  [-S src_ip] [-D dst_ip] [-t tcp/udp/raw]\n"
            "                  [-p c/s/all] [-T timeout] [-e ether_type]\n"
            "                  [-L all/raw/tcp/udp/config]\n"
-           "                  [-i interface] [-c config_file]\n");
+           "                  [-i interface] [-c config_file]\n"
+           "       --test run test program and exit\n"
+           "       --help print this message and exit\n");
 }
 
 int main(int argc, char *const *argv)
@@ -298,10 +314,14 @@ int main(int argc, char *const *argv)
         //print_content((uint8_t *)buf, 64);
         //hex_and_ascii_print("\n    ", (const uint8_t *)buf, conf_len);
         //printf("\n");
-        if (ethertype) {
-            raw_send(interface, ethertype, (uint8_t *)buf, conf_len);
-        } else {
-            raw_send_all(interface, (uint8_t *)buf, conf_len);
+        while (send_times) {
+            if (ethertype) {
+                raw_send(interface, ethertype, (uint8_t *)buf, conf_len);
+            } else {
+                raw_send_all(interface, (uint8_t *)buf, conf_len);
+            }
+            reconfig_cfg_rslt(buf);
+            send_times--;
         }
         clean_cfg_rslt();
         return 0;
