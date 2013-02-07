@@ -75,10 +75,12 @@ static int get_bitsoffset_value(void *ptr, int bits_offset)
     int a;
     int b;
     uint8_t  tmp = 0;
+    uint8_t  value = 0x1;
     a = bits_offset / 8;
     b = bits_offset % 8;
     tmp = *((uint8_t *)ptr + a);
-    if (tmp >> (7 - b)) {
+    value = value << (7 - b);
+    if (tmp & value) {
         return 1;
     } else {
         return 0;
@@ -90,13 +92,14 @@ static void set_bitsoffset_value(void *ptr, int bits_offset, int v)
     int a;
     int b;
     uint8_t  tmp = 0;
+    const uint8_t  value = 0x1;
     a = bits_offset / 8;
     b = bits_offset % 8;
     tmp = *((uint8_t *)ptr + a);
     if (v) {
-        tmp |= (1 << (7 - b));
+        tmp |= (value << (7 - b));
     } else {
-        tmp &= (~(1 << (7 - b)));
+        tmp &= (~(value << (7 - b)));
     }
     *((uint8_t *)ptr + a) = tmp;
 }
@@ -107,17 +110,25 @@ static void inc_value_by_offset(void *ptr, int bits_offset, int bits_num)
     int bits_v;
     int i = 0;
 
+    parser_print("\n\n");
+    parser_print("bits_offset: %d, num: %d.\n", bits_offset, bits_num);
+    //hex_and_ascii_print("\n", ptr, 64);
     for (i = 0; i < bits_num; i++) {
         bits_v = get_bitsoffset_value(ptr, bits_offset + i);
+        parser_print(" %d", bits_v);
         if (bits_v) {
-            value |= (1ull << (bits_num - i));
+            value |= (1ull << (bits_num - 1 - i));
         }
     }
-    parser_print("value: %" PRIdLEAST64, value);
+    parser_print("value: 0x%" PRIxFAST64, value);
     value++;
+    parser_print("value: 0x%" PRIxFAST64, value);
     for (i = 0; i < bits_num; i++) {
-        set_bitsoffset_value(ptr, bits_offset + i, value >> (bits_num - i));
+        bits_v = (int)(value >> (bits_num - 1 - i)) & 0x1;
+        parser_print(" %d", bits_v);
+        set_bitsoffset_value(ptr, bits_offset + i, bits_v);
     }
+    parser_print("\n");
 }
 
 void reconfig_cfg_rslt(void *ptr)
@@ -127,21 +138,22 @@ void reconfig_cfg_rslt(void *ptr)
         if (cfg_rslt[line].type == 0) {
             break;
         }
-        printf("offset: %04d, type: %d, vary, %d, num: %02d, ",\
+        parser_print("offset: %04d, type: %d, vary, %d, num: %02d, ",\
                cfg_rslt[line].offset,\
                cfg_rslt[line].type,\
                cfg_rslt[line].vary,\
                cfg_rslt[line].num);
         if (cfg_rslt[line].vary == SP_CNFG_VARY_INC) {
             if (cfg_rslt[line].type == SP_CNFG_TYPE_BITS) {
-                printf("value: 0x%" PRIxFAST64, cfg_rslt[line].u.value);
+                parser_print("value: 0x%" PRIxFAST64, cfg_rslt[line].u.value);
             }
             inc_value_by_offset(ptr, cfg_rslt[line].offset, cfg_rslt[line].num);
         } else if (cfg_rslt[line].vary == SP_CNFG_VARY_DEC) {
         }
+        parser_print("\n");
         line++;
     }
-    printf("\n");
+    parser_print("\n");
 }
 
 void get_newbuf_by_cfg_rslt(char *buf, int counter)
@@ -291,6 +303,19 @@ error:
     return ret;
 }
 
+static int get_vary_value(char *buf)
+{
+    int vary = 0;
+    if (strstr(buf, SP_CNFG_VARY_INC_STR)) {
+        vary = SP_CNFG_VARY_INC;
+    } else if (strstr(buf, SP_CNFG_VARY_DEC_STR)) {
+        vary = SP_CNFG_VARY_DEC;
+    } else if (strstr(buf, SP_CNFG_VARY_RAN_STR)) {
+        vary = SP_CNFG_VARY_RAN;
+    }
+    return vary;
+}
+
 int parser_config(char *filename, char *ptr, int len, int *get_len)
 {
     FILE *fp;
@@ -340,12 +365,12 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
         if (aligned != 1 || started == 0) {
             /* get value from not aligned seg */
             if (strncmp(buf, "bits", 4) == 0) {
+                cfg_rslt[valid_line].vary = get_vary_value(buf);
                 n_bit = atoi(buf + 4);
                 ret = get_value(buf, &tmp_data);
 
                 cfg_rslt[valid_line].offset = bits_count;
                 cfg_rslt[valid_line].type = SP_CNFG_TYPE_BITS;
-                cfg_rslt[valid_line].vary = 0;
                 cfg_rslt[valid_line].num = n_bit;
                 cfg_rslt[valid_line].u.value = tmp_data;
                 bits_count += n_bit;
@@ -377,6 +402,7 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
         //parser_print("%s", buf);
         /* get value from aligned seg */
         if (strncmp(buf, "bits", 4) == 0) {
+            cfg_rslt[valid_line].vary = get_vary_value(buf);
             n_bit = atoi(buf + 4);
             //parser_print("bits: %d.\n", n_bit);
             size += n_bit;
@@ -385,7 +411,6 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
 
             cfg_rslt[valid_line].offset = bits_count;
             cfg_rslt[valid_line].type = SP_CNFG_TYPE_BITS;
-            cfg_rslt[valid_line].vary = 0;
             cfg_rslt[valid_line].num = n_bit;
             cfg_rslt[valid_line].u.value = tmp_data;
             bits_count += n_bit;

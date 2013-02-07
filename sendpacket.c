@@ -37,6 +37,7 @@ static uint32_t sp_show_configure;
 static uint32_t sp_quiet_mode;
 static uint8_t *sp_conf_file = NULL;
 static char    *interface = NULL;
+static char    snd_msg[1024] = {0};
 
 extern void show_help();
 static int get_options(int argc, char *const *argv)
@@ -227,6 +228,23 @@ static int get_options(int argc, char *const *argv)
                 }
                 printf("option \"-c\" requires file name.\n");
                 return SP_ERROR;
+              case 'm':
+                if (*p) {
+                    if (strlen((char *)p) > 1024) {
+                        return SP_ERROR;
+                    }
+                    strncpy(snd_msg, (char *)p, strlen((char *)p));
+                    goto next;
+                }
+                if (argv[++i]) {
+                    if (strlen(argv[i]) > 1024) {
+                        return SP_ERROR;
+                    }
+                    strncpy(snd_msg, argv[i], strlen(argv[i]));
+                    goto next;
+                }
+                printf("option \"-m\" requires message.\n");
+                return SP_ERROR;
              case 'e':
                 if (*p) {
                     tmp_arg = (char *)p;
@@ -238,6 +256,18 @@ static int get_options(int argc, char *const *argv)
                     return SP_ERROR;
                 }
                 ethertype = (uint32_t)strtoul(tmp_arg, NULL, 0);
+                goto next;
+             case 'n':
+                if (*p) {
+                    tmp_arg = (char *)p;
+                } else if (argv[++i]) {
+                    tmp_arg = (char *) argv[i];
+                }
+                if (tmp_arg == NULL) {
+                    printf("option \"-n\" requires send times.\n");
+                    return SP_ERROR;
+                }
+                send_times = (uint32_t)strtoul(tmp_arg, NULL, 0);
                 goto next;
              case 'i':
                 if (*p) {
@@ -269,6 +299,8 @@ void show_help()
            "                  [-p c/s/all] [-T timeout] [-e ether_type]\n"
            "                  [-L all/raw/tcp/udp/config]\n"
            "                  [-i interface] [-c config_file]\n"
+           "                  [-m <some content you want to fill>]\n"
+           "                  [-n send_times]\n"
            "       --test run test program and exit\n"
            "       --help print this message and exit\n");
 }
@@ -310,18 +342,25 @@ int main(int argc, char *const *argv)
             printf("config file not valid.\n");
             return 1;
         }
-        show_cfg_rslt();
+        //show_cfg_rslt();
         //print_content((uint8_t *)buf, 64);
         //hex_and_ascii_print("\n    ", (const uint8_t *)buf, conf_len);
         //printf("\n");
-        while (send_times) {
+        while (1) {
             if (ethertype) {
                 raw_send(interface, ethertype, (uint8_t *)buf, conf_len);
             } else {
                 raw_send_all(interface, (uint8_t *)buf, conf_len);
             }
             reconfig_cfg_rslt(buf);
-            send_times--;
+            if (send_times == 0) {
+                continue;
+            } else {
+                send_times--;
+                if (send_times == 0) {
+                    break;
+                }
+            }
         }
         clean_cfg_rslt();
         return 0;
@@ -330,17 +369,27 @@ int main(int argc, char *const *argv)
     ta();
     tb();
     */
-    if (send_type == TCP_SOCKET) {
-        if (tcp_send_type == TCP_CNCT_SND) {
-            tcp_connect_send(dst_port, dst_ip, NULL);
-        } else if (tcp_send_type == TCP_CNCT) {
-            tcp_connect(dst_port, dst_ip, timeout);
-        } else if (tcp_send_type == TCP_SND) {
+    while (1) {
+        if (send_type == TCP_SOCKET) {
+            if (tcp_send_type == TCP_CNCT_SND) {
+                tcp_connect_send(dst_port, dst_ip, NULL);
+            } else if (tcp_send_type == TCP_CNCT) {
+                tcp_connect(dst_port, dst_ip, timeout);
+            } else if (tcp_send_type == TCP_SND) {
+            }
+        } else if (send_type == UDP_SOCKET) {
+            udp_send(dst_port, dst_ip, snd_msg);
+        } else {
+            raw_send(interface, ethertype, (uint8_t *)snd_msg, strlen(snd_msg));
         }
-    } else if (send_type == UDP_SOCKET) {
-        udp_send(dst_port, dst_ip);
-    } else {
-        raw_send(interface, ethertype, (uint8_t *)"xuchunxiao", 10);
+        if (send_times == 0) {
+            continue;
+        } else {
+            send_times--;
+            if (send_times == 0) {
+                break;
+            }
+        }
     }
     return 0;
 }

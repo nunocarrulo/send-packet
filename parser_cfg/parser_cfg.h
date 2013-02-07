@@ -25,8 +25,14 @@ typedef struct _parser_config {
 #define SP_CNFG_TYPE_BITS   1
 #define SP_CNFG_TYPE_STRING 2
 
+#define SP_CNFG_VARY_NONE   0
 #define SP_CNFG_VARY_INC    1
 #define SP_CNFG_VARY_DEC    2
+#define SP_CNFG_VARY_RAN    3
+
+#define SP_CNFG_VARY_INC_STR "value_inc"
+#define SP_CNFG_VARY_DEC_STR "value_dec"
+#define SP_CNFG_VARY_RAN_STR "value_ran"
 
 void init_cfg_rslt(void);
 void show_cfg_rslt(void);

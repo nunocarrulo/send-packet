@@ -27,7 +27,7 @@ bits13   0x1abc
 bits8    0x80
 bits8    0x11
 bits16   0x46c6
-bits32   0xC0A83801
-bits32   0xC0A838FF
+bits32   0xC0A83801 value_inc
+bits32   0xC0A838FF value_inc
 string15 "I am xuchunxiao"
 seg_end

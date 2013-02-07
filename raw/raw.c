@@ -130,7 +130,8 @@ int raw_send(char *net_i, uint16_t ether_type, uint8_t *ptr, int len)
     }
     raw_print("line: %d.\n", __LINE__);
     free(buf);
-    return fd;
+    close(fd);
+    return 0;
 }
 
 int raw_send_all(char *net_i, uint8_t *ptr, int len)
@@ -170,5 +171,6 @@ int raw_send_all(char *net_i, uint8_t *ptr, int len)
         return -1;
     }
     raw_print("line: %d.\n", __LINE__);
-    return fd;
+    close(fd);
+    return 0;
 }
