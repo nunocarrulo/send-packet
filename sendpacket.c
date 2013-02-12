@@ -20,6 +20,7 @@
 #include "tcp.h"
 #include "parser_cfg.h"
 #include "common_print.h"
+#include "need_plugin.h"
 
 static uint32_t timeout = 0;
 static uint32_t src_ip = 0;
@@ -330,6 +331,8 @@ int main(int argc, char *const *argv)
     printf("dst port: 0x%x, %u.\n", dst_port, dst_port);
     printf("src port: 0x%x, %u.\n", src_port, src_port);
 #endif
+    plugin_test();
+    return 0;
     if (sp_conf_file) {
         init_cfg_rslt();
         if (access((char *)sp_conf_file, F_OK)) {

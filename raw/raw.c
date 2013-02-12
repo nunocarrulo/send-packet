@@ -118,6 +118,10 @@ int raw_send(char *net_i, uint16_t ether_type, uint8_t *ptr, int len)
     sll.sll_protocol = n_ethtype;
 
     bind(fd, (struct sockaddr *)&sll, sizeof(sll));
+    if (strlen((char *)ptr) == 0) {
+        ptr = (uint8_t *)"xuchunxiao";
+        len = strlen((char *)ptr);
+    }
     buf = malloc(len + 14);
     memcpy(buf, dmac, 6);
     memcpy(buf + 6, smac, 6);
@@ -165,6 +169,10 @@ int raw_send_all(char *net_i, uint8_t *ptr, int len)
     sll.sll_protocol = htons(ETH_P_ALL);
 
     bind(fd, (struct sockaddr *)&sll, sizeof(sll));
+    if (strlen((char *)ptr) == 0) {
+        ptr = (uint8_t *)"xuchunxiao";
+        len = strlen((char *)ptr);
+    }
     raw_print("line: %d.\n", __LINE__);
     if (sendto(fd, ptr, len, 0, (struct sockaddr *)&sll, sizeof(sll)) < 0) {
         perror("sendto error.\n");

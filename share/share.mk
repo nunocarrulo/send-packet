@@ -4,6 +4,7 @@ d := $(dir)
 
 LIBRARY := $(OBJ_DIR)/libshare.a
 OBJS_$(d) := $(OBJ_DIR)/packet_about.o \
+             $(OBJ_DIR)/need_plugin.o \
              $(OBJ_DIR)/common_print.o
 
 $(OBJS_$(d)) : CFLAGS_LOCAL := -O2 -W

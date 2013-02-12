@@ -104,7 +104,16 @@ static void set_bitsoffset_value(void *ptr, int bits_offset, int v)
     *((uint8_t *)ptr + a) = tmp;
 }
 
-static void inc_value_by_offset(void *ptr, int bits_offset, int bits_num)
+/**
+ * @Synopsis  incdec_value_by_offset
+ *
+ * @Param ptr: point to the content buffer
+ * @Param bits_offset: the first bit offset of the value
+ * @Param bits_num: the number of bits
+ * @Param inc: set not zero if inc value
+ * @Param dec: set not zero if dec value
+ */
+static void incdec_value_by_offset(void *ptr, int bits_offset, int bits_num, int inc, int dec)
 {
     uint64_t value = 0ull;
     int bits_v;
@@ -121,7 +130,11 @@ static void inc_value_by_offset(void *ptr, int bits_offset, int bits_num)
         }
     }
     parser_print("value: 0x%" PRIxFAST64, value);
-    value++;
+    if (inc) {
+        value++;
+    } else if (dec) {
+        value--;
+    }
     parser_print("value: 0x%" PRIxFAST64, value);
     for (i = 0; i < bits_num; i++) {
         bits_v = (int)(value >> (bits_num - 1 - i)) & 0x1;
@@ -147,8 +160,9 @@ void reconfig_cfg_rslt(void *ptr)
             if (cfg_rslt[line].type == SP_CNFG_TYPE_BITS) {
                 parser_print("value: 0x%" PRIxFAST64, cfg_rslt[line].u.value);
             }
-            inc_value_by_offset(ptr, cfg_rslt[line].offset, cfg_rslt[line].num);
+            incdec_value_by_offset(ptr, cfg_rslt[line].offset, cfg_rslt[line].num, 1, 0);
         } else if (cfg_rslt[line].vary == SP_CNFG_VARY_DEC) {
+            incdec_value_by_offset(ptr, cfg_rslt[line].offset, cfg_rslt[line].num, 0, 1);
         }
         parser_print("\n");
         line++;
