@@ -20,6 +20,7 @@
 #include "log.h"
 #include "common.h"
 #include "parser_cfg.h"
+#include "need_plugin.h"
 
 #define MAXDATASIZE  2048
 #define PARSER_FILE_DEPTH 4096 
@@ -144,6 +145,48 @@ static void incdec_value_by_offset(void *ptr, int bits_offset, int bits_num, int
     parser_print("\n");
 }
 
+void set_value_by_plugin(void *ptr, int bits_offset, int bits_num, char *fname)
+{
+    int ret = 0;
+    uint16_t cksm_u16_get;
+    uint8_t *start = (uint8_t *)ptr;
+    if (bits_offset % 8 != 0) {
+        printf("not aliged to 8 bytes.\n");
+        return;
+    }
+    int byte_offset = bits_offset / 8;
+    start += byte_offset;
+    switch (bits_num) {
+        case 16:
+            ret = get_uint16_by_plugin(start, &cksm_u16_get, fname);
+            if (ret) {
+                return;
+            } else {
+                *(uint16_t *)start = htons(cksm_u16_get);
+            }
+        break;
+        case 32:
+            ret = get_uint16_by_plugin(start, &cksm_u16_get, fname);
+            if (ret) {
+                return;
+            } else {
+                *(uint16_t *)start = htons(cksm_u16_get);
+            }
+        break;
+        case 64:
+            ret = get_uint16_by_plugin(start, &cksm_u16_get, fname);
+            if (ret) {
+                return;
+            } else {
+                *(uint16_t *)start = htons(cksm_u16_get);
+            }
+        break;
+        default:
+            printf("not supported.\n");
+        break;
+    }
+}
+
 void reconfig_cfg_rslt(void *ptr)
 {
     int line = 0;
@@ -163,6 +206,27 @@ void reconfig_cfg_rslt(void *ptr)
             incdec_value_by_offset(ptr, cfg_rslt[line].offset, cfg_rslt[line].num, 1, 0);
         } else if (cfg_rslt[line].vary == SP_CNFG_VARY_DEC) {
             incdec_value_by_offset(ptr, cfg_rslt[line].offset, cfg_rslt[line].num, 0, 1);
+        }
+        parser_print("\n");
+        line++;
+    }
+    parser_print("\n");
+}
+
+void reconfig_cfg_rslt_plu(void *ptr)
+{
+    int line = 0;
+    while (line < PARSER_FILE_DEPTH) {
+        if (cfg_rslt[line].type == 0) {
+            break;
+        }
+        parser_print("offset: %04d, type: %d, vary, %d, num: %02d, ",\
+               cfg_rslt[line].offset,\
+               cfg_rslt[line].type,\
+               cfg_rslt[line].vary,\
+               cfg_rslt[line].num);
+        if (cfg_rslt[line].vary == SP_CNFG_VARY_PLU) {
+            set_value_by_plugin(ptr, cfg_rslt[line].offset, cfg_rslt[line].num, cfg_rslt[line].plu_fname);
         }
         parser_print("\n");
         line++;
@@ -326,8 +390,30 @@ static int get_vary_value(char *buf)
         vary = SP_CNFG_VARY_DEC;
     } else if (strstr(buf, SP_CNFG_VARY_RAN_STR)) {
         vary = SP_CNFG_VARY_RAN;
+    } else if (strstr(buf, SP_CNFG_VARY_PLU_STR)) {
+        vary = SP_CNFG_VARY_PLU;
     }
     return vary;
+}
+
+static int get_plug_fname(char *buf, char *fname)
+{
+    char *tmp;
+    tmp = strstr(buf, SP_CNFG_VARY_PLU_STR);
+    if (tmp == NULL) {
+        return -1;
+    }
+    strcpy(fname, tmp + strlen(SP_CNFG_VARY_PLU_STR));
+    /* remove special char*/
+    for (tmp = fname; *tmp != '\0'; tmp++) {
+        if (*tmp == '\r') {
+            *tmp = '\0';
+        }
+        if (*tmp == '\n') {
+            *tmp = '\0';
+        }
+    }
+    return 0;
 }
 
 int parser_config(char *filename, char *ptr, int len, int *get_len)
@@ -380,6 +466,9 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
             /* get value from not aligned seg */
             if (strncmp(buf, "bits", 4) == 0) {
                 cfg_rslt[valid_line].vary = get_vary_value(buf);
+                if (cfg_rslt[valid_line].vary == SP_CNFG_VARY_PLU) {
+                    get_plug_fname(buf, cfg_rslt[valid_line].plu_fname);
+                }
                 n_bit = atoi(buf + 4);
                 ret = get_value(buf, &tmp_data);
 
@@ -417,6 +506,9 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
         /* get value from aligned seg */
         if (strncmp(buf, "bits", 4) == 0) {
             cfg_rslt[valid_line].vary = get_vary_value(buf);
+            if (cfg_rslt[valid_line].vary == SP_CNFG_VARY_PLU) {
+                get_plug_fname(buf, cfg_rslt[valid_line].plu_fname);
+            }
             n_bit = atoi(buf + 4);
             //parser_print("bits: %d.\n", n_bit);
             size += n_bit;

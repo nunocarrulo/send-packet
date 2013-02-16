@@ -15,13 +15,27 @@
 #define PROTOCOL_VALUE_IPV6     0x86DD
 
 typedef struct _ip_hdr {
+#if __BYTE_ORDER == __BIG_ENDIAN
+    uint8_t hdr_len : 4;
+    uint8_t version : 4;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
     uint8_t version : 4;
     uint8_t hdr_len : 4;
+#else
+#error  "Please fix share/packet_about.h"
+#endif
     uint8_t tos;
     uint16_t length;
     uint16_t id;
+#if __BYTE_ORDER == __BIG_ENDIAN
     uint16_t frag_flags : 3;
     uint16_t frag_offset : 13;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+    uint16_t frag_offset : 13;
+    uint16_t frag_flags : 3;
+#else
+#error  "Please fix share/packet_about.h"
+#endif
     uint8_t ttl;
     uint8_t protocol;
     uint16_t checksum;

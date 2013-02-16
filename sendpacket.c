@@ -330,9 +330,9 @@ int main(int argc, char *const *argv)
     printf("src ip:   0x%x.\n", src_ip);
     printf("dst port: 0x%x, %u.\n", dst_port, dst_port);
     printf("src port: 0x%x, %u.\n", src_port, src_port);
-#endif
     plugin_test();
     return 0;
+#endif
     if (sp_conf_file) {
         init_cfg_rslt();
         if (access((char *)sp_conf_file, F_OK)) {
@@ -349,21 +349,21 @@ int main(int argc, char *const *argv)
         //print_content((uint8_t *)buf, 64);
         //hex_and_ascii_print("\n    ", (const uint8_t *)buf, conf_len);
         //printf("\n");
+        reconfig_cfg_rslt_plu(buf);
         while (1) {
             if (ethertype) {
                 raw_send(interface, ethertype, (uint8_t *)buf, conf_len);
             } else {
                 raw_send_all(interface, (uint8_t *)buf, conf_len);
             }
-            reconfig_cfg_rslt(buf);
-            if (send_times == 0) {
-                continue;
-            } else {
+            if (send_times != 0) {
                 send_times--;
                 if (send_times == 0) {
                     break;
                 }
             }
+            reconfig_cfg_rslt(buf);
+            reconfig_cfg_rslt_plu(buf);
         }
         clean_cfg_rslt();
         return 0;
@@ -385,9 +385,7 @@ int main(int argc, char *const *argv)
         } else {
             raw_send(interface, ethertype, (uint8_t *)snd_msg, strlen(snd_msg));
         }
-        if (send_times == 0) {
-            continue;
-        } else {
+        if (send_times != 0) {
             send_times--;
             if (send_times == 0) {
                 break;
