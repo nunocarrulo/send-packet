@@ -463,6 +463,15 @@ int parser_config(char *filename, char *ptr, int len, int *get_len)
             aligned = 0;
         }
         if (aligned != 1 || started == 0) {
+            if (size != 0) {
+                /* size must be 32 */
+                *(uint32_t *)tmp_ptr = htonl((uint32_t)(data_64 >> 32));
+                tmp_ptr += 4;
+                size = 0;
+                data_32 = 0;
+                data_64 = 0;
+            }
+
             /* get value from not aligned seg */
             if (strncmp(buf, "bits", 4) == 0) {
                 cfg_rslt[valid_line].vary = get_vary_value(buf);

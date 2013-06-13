@@ -1,0 +1,31 @@
+seg_start
+notalign
+bits48   0x0609062088db
+bits48   0x0609062088da
+bits16   0x0800
+seg_end
+
+seg_start
+bits4    0x4
+bits4    0x5
+bits8    0x00
+bits16   0x002E
+bits16   0x0000
+bits3    0x0
+bits13   0x0000
+bits8    0x00
+bits8    0x11
+bits16   0xa1d9 value_pluget_ip_checksum
+bits32   0x0a100063 value_dec
+bits32   0x0a110063 value_inc
+seg_end
+
+seg_start
+notalign
+bits32   0x10001001
+bits32   0x001a0000
+#bits16   0x6162
+string18 "I am xuchunxiao ha"
+seg_end
+
+
